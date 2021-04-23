@@ -1,0 +1,110 @@
+sunil.nagaraj@u-next.com
+------------------------
+
+Tomcat:
+############################################################################################################
+sudo apt-get update
+
+sudo apt-get install default-jdk
+
+//Create Tomcat User
+sudo groupadd tomcat
+//this user willbe the member of the home directory
+sudo useradd -s /bin/false -g tomcat -d /opt/tomcat tomcat
+
+	Installing Tomcat 
+#############################################################################################################
+//Link to download tomcat server 8.5
+sudo wget https://downloads.apache.org/tomcat/tomcat-8/v8.5.65/bin/apache-tomcat-8.5.65.tar.gz
+//Extract Tomcat to your home dir
+sudo tar -xzvf apache-tomcat-8.5.65.tar.gz
+//move to 
+sudo mv apache-tomcat-8.5.65 /opt/tomcat
+//permission to be provide please run the below code
+sudo chgrp -R tomcat /opt/tomcat
+sudo chown -R tomcat /opt/tomcat
+sudo chmod -R 755 /opt/tomcat
+
+############################################################################################################
+
+Create a Systemd service file to start and stop tomcat
+
+//create the file
+sudo nano /etc/systemd/system/tomcat.service
+
+
+Add the following content:
+
+[Unit]
+Description=Apache Tomcat Web Server
+After=network.target
+
+[Service]
+Type=forking
+
+Environment=JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/jre
+Environment=CATALINA_PID=/opt/tomcat/temp/tomcat.pid
+Environment=CATALINA_HOME=/opt/tomcat
+Environment=CATALINA_BASE=/opt/tomcat
+Environment='CATALINA_OPTS=-Xms512M -Xmx1024M -server -XX:+UseParallelGC'
+Environment='JAVA_OPTS=-Djava.awt.headless=true -Djava.security.egd=file:/dev/./urandom'
+
+ExecStart=/opt/tomcat/bin/startup.sh
+ExecStop=/opt/tomcat/bin/shutdown.sh
+
+User=tomcat
+Group=tomcat
+UMask=0007
+RestartSec=15
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
+//reload the server file
+
+sudo systemctl daemon-reload
+
+Now start the Tomcat service and check the status:
+sudo systemctl start tomcat
+sudo systemctl status tomcat
+############################################################################################################
+Configure Tomcat Web Management Console
+
+
+
+You can do this by editing the tomcat-users.xml file:
+
+sudo nano /opt/tomcat/conf/tomcat-users.xml
+
+<role rolename="manager-gui"/>
+<role rolename="manager-script"/>
+<user username="username" password="password" roles="manager-gui,manager-script"/>
+
+sudo nano /opt/tomcat/conf/server.xml
+and changed the port from 8080 to 9090/9091/9096
+
+##############################################################################################################
+You will also need to edit context.xml file, if you want to access Tomcat from a remote machine:
+
+To allow access to Manager App open the following file:
+
+sudo nano /opt/tomcat/webapps/manager/META-INF/context.xml
+
+
+
+
+//to access manager app
+
+<Context antiResourceLocking="false" privileged="true" >
+
+<!--
+<Valve className="org.apache.catalina.valves.RemoteAddrValve" allow="127\.\d+\.\d+\.\d+|::1|0:0:0:0:0:0:0:1" />
+-->
+
+</Context>
+
+
+sudo systemctl restart tomcat
+
+###############################################################################################################
